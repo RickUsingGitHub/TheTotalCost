@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TheTotalCost — ICE vs BEV mid-size SUVs</title>
+  <meta name="description" content="Owner cost and environmental cost of mid-size ICE and BEV SUVs in Australia." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;600&family=Source+Serif+4:wght@700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="wrap">
+    <header class="hero">
+      <div class="kicker">TheTotalCost · Australia · 2026</div>
+      <h1>What does one kilometre actually cost?</h1>
+      <p class="lede">Mid-size SUV, petrol versus battery-electric. Owner cash on the left; climate and air-pollution on the right. Defaults are NSW / Australia 2026. Every assumption is a slider.</p>
+    </header>
+    <div class="layout">
+      <aside class="controls card">
+        <h2>1. Vehicles</h2>
+        <select id="pair"></select>
+        <p class="tiny" id="pairNote"></p>
+        <div id="customBox">
+          <input id="cBevName" placeholder="BEV name" />
+          <input id="cBevPrice" type="number" placeholder="BEV price" />
+          <input id="cBevKwh" type="number" step="0.1" placeholder="BEV kWh/100km" />
+          <input id="cBevBatt" type="number" placeholder="Pack kWh" />
+          <input id="cBevKg" type="number" placeholder="BEV kg" />
+          <select id="cBevChem"><option>LFP</option><option>NMC</option></select>
+          <input id="cIceName" placeholder="ICE name" />
+          <input id="cIcePrice" type="number" placeholder="ICE price" />
+          <input id="cIceLpk" type="number" step="0.1" placeholder="ICE L/100km" />
+          <input id="cIceKg" type="number" placeholder="ICE kg" />
+          <label class="checks"><label><input type="checkbox" id="cIceHybrid" /> ICE is a hybrid</label></label>
+        </div>
+        <h2>2. Energy prices</h2>
+        <label class="row">Petrol $ / litre <span class="val" id="petrolLab"></span></label>
+        <input id="petrol" type="range" min="1.2" max="3.2" step="0.01" oninput="petrolLab.textContent='$'+this.value" />
+        <label class="row">Home solar $ / kWh <span class="val" id="solarLab"></span></label>
+        <input id="solar" type="range" min="0" max="0.2" step="0.005" oninput="solarLab.textContent=this.value" />
+        <label class="row">Home off-peak $ / kWh <span class="val" id="offpeakLab"></span></label>
+        <input id="offpeak" type="range" min="0.03" max="0.25" step="0.005" oninput="offpeakLab.textContent=this.value" />
+        <label class="row">Home peak / flat $ / kWh <span class="val" id="peakLab"></span></label>
+        <input id="peak" type="range" min="0.15" max="0.6" step="0.005" oninput="peakLab.textContent=this.value" />
+        <label class="row">Public AC $ / kWh <span class="val" id="acLab"></span></label>
+        <input id="publicAc" type="range" min="0" max="0.6" step="0.01" oninput="acLab.textContent=this.value" />
+        <label class="row">DC / Supercharger $ / kWh <span class="val" id="dcLab"></span></label>
+        <input id="publicDc" type="range" min="0.2" max="1.0" step="0.01" oninput="dcLab.textContent=this.value" />
+        <h2>3. Where the electrons come from</h2>
+        <p class="tiny">Blend: <strong id="elecBlend"></strong> · raw sum <span id="mixSum"></span></p>
+        <div class="alert" id="mixWarn">Shares don’t add to 100% — they will be scaled.</div>
+        <label class="row">Solar % <span class="val" id="msLab"></span></label>
+        <input id="mixSolar" type="range" min="0" max="100" step="1" oninput="msLab.textContent=this.value+'%'" />
+        <label class="row">Off-peak home % <span class="val" id="moLab"></span></label>
+        <input id="mixOffpeak" type="range" min="0" max="100" step="1" oninput="moLab.textContent=this.value+'%'" />
+        <label class="row">Peak / flat home % <span class="val" id="mpLab"></span></label>
+        <input id="mixPeak" type="range" min="0" max="100" step="1" oninput="mpLab.textContent=this.value+'%'" />
+        <label class="row">Public AC % <span class="val" id="maLab"></span></label>
+        <input id="mixAc" type="range" min="0" max="100" step="1" oninput="maLab.textContent=this.value+'%'" />
+        <label class="row">DC / Supercharger % <span class="val" id="mdLab"></span></label>
+        <input id="mixDc" type="range" min="0" max="100" step="1" oninput="mdLab.textContent=this.value+'%'" />
+        <h2>4. How long, how far</h2>
+        <label class="row">km / year <span class="val" id="kmLab"></span></label>
+        <input id="annualKm" type="range" min="5000" max="35000" step="100" oninput="kmLab.textContent=this.value" />
+        <label class="row">Years kept <span class="val" id="yrLab"></span></label>
+        <input id="years" type="range" min="4" max="25" step="1" oninput="yrLab.textContent=this.value" />
+        <p class="tiny">Lifetime: <strong id="lifeKm"></strong></p>
+        <label class="row">Residual value at end %</label>
+        <input id="residualPct" type="number" step="1" />
+        <h2>5. Climate & health prices</h2>
+        <label class="row">Grid intensity g CO2e / kWh</label>
+        <input id="gridG" type="number" step="10" />
+        <label class="row">Petrol well-to-wheel kg CO2e / L</label>
+        <input id="petrolWtw" type="number" step="0.05" />
+        <label class="row">Social cost of carbon $ / t</label>
+        <input id="scc" type="number" step="5" />
+        <label class="row">Offset (ACCU-like) $ / t</label>
+        <input id="offset" type="number" step="1" />
+        <label class="row">Value of a statistical life $</label>
+        <input id="vsl" type="number" step="100000" />
+        <label class="row">ICE air-health $ / km</label>
+        <input id="iceHealth" type="number" step="0.001" />
+        <label class="row">BEV air-health $ / km</label>
+        <input id="bevHealth" type="number" step="0.001" />
+        <h2>6. Other running costs</h2>
+        <label class="row">ICE maint $ / km</label><input id="iceMaint" type="number" step="0.001" />
+        <label class="row">BEV maint $ / km</label><input id="bevMaint" type="number" step="0.001" />
+        <label class="row">ICE tyres $ / km</label><input id="iceTyre" type="number" step="0.001" />
+        <label class="row">BEV tyres $ / km</label><input id="bevTyre" type="number" step="0.001" />
+        <label class="row">Insurance % of price / year</label><input id="insurancePct" type="number" step="0.1" />
+        <label class="row">Rego $ / year</label><input id="regoYear" type="number" step="10" />
+        <div class="checks">
+          <label><input type="checkbox" id="includeSocial" /> Add climate (SCC) into combined total</label>
+          <label><input type="checkbox" id="includeHealth" /> Add air-pollution health into combined total</label>
+          <label><input type="checkbox" id="includeOffsetLine" /> Show offset line (do not add SCC and offsets)</label>
+        </div>
+        <div class="btnrow">
+          <button class="linkish" id="reset" type="button">Reset defaults</button>
+          <button class="linkish ghost" id="printBtn" type="button">Print / PDF</button>
+        </div>
+      </aside>
+      <main class="results">
+        <section class="compare">
+          <article class="veh ice" id="iceCard">
+            <span class="pill">ICE</span>
+            <h3 id="iceName">—</h3>
+            <div class="tiny" id="iceEff"></div>
+            <div class="tiny">RRP <span id="icePrice"></span></div>
+            <div class="big" id="icePerKm">—</div>
+            <div class="unit">owner $ / km</div>
+            <div class="barwrap"><div class="bar icebar" id="iceCashBar"></div></div>
+            <p class="tiny">Lifetime owner <strong id="iceLife"></strong></p>
+            <p><span class="big" style="font-size:1.3rem" id="iceG">—</span> <span class="unit">g CO2e / km</span></p>
+            <div class="barwrap"><div class="bar icebar" id="iceGhgBar"></div></div>
+            <p class="tiny">Lifetime <span id="iceTon"></span></p>
+          </article>
+          <article class="veh bev" id="bevCard">
+            <span class="pill">BEV</span>
+            <h3 id="bevName">—</h3>
+            <div class="tiny" id="bevEff"></div>
+            <div class="tiny">RRP <span id="bevPrice"></span></div>
+            <div class="big" id="bevPerKm">—</div>
+            <div class="unit">owner $ / km</div>
+            <div class="barwrap"><div class="bar bevbar" id="bevCashBar"></div></div>
+            <p class="tiny">Lifetime owner <strong id="bevLife"></strong></p>
+            <p><span class="big" style="font-size:1.3rem" id="bevG">—</span> <span class="unit">g CO2e / km</span></p>
+            <div class="barwrap"><div class="bar bevbar" id="bevGhgBar"></div></div>
+            <p class="tiny">Lifetime <span id="bevTon"></span></p>
+          </article>
+        </section>
+        <section class="card">
+          <h2>Verdict under these inputs</h2>
+          <p id="verdictCash"></p>
+          <p id="verdictGhg"></p>
+          <p class="tiny" id="lifeLine"></p>
+        </section>
+        <section class="card">
+          <h2>Per kilometre breakdown</h2>
+          <table><thead><tr><th>Component</th><th style="text-align:right">ICE</th><th style="text-align:right">BEV</th></tr></thead><tbody id="tbody"></tbody></table>
+        </section>
+        <section class="card">
+          <h2>Climate money and pollution deaths</h2>
+          <p class="tiny">Offsets (~$38/t ACCU) are not the same as the social cost of carbon. Do not add them.</p>
+          <table>
+            <thead><tr><th></th><th style="text-align:right">ICE</th><th style="text-align:right">BEV</th></tr></thead>
+            <tbody>
+              <tr><td>Lifetime offset bill</td><td class="n" id="iceOffLife"></td><td class="n" id="bevOffLife"></td></tr>
+              <tr><td>Lifetime climate damage at SCC</td><td class="n" id="iceSccLife"></td><td class="n" id="bevSccLife"></td></tr>
+              <tr><td>Lifetime air-pollution health cost</td><td class="n" id="iceHealthLife"></td><td class="n" id="bevHealthLife"></td></tr>
+              <tr><td>Implied statistical deaths (health $ ÷ VSL)</td><td class="n" id="iceDeaths"></td><td class="n" id="bevDeaths"></td></tr>
+              <tr><td>Combined $ / km</td><td class="n" id="iceSocial"></td><td class="n" id="bevSocial"></td></tr>
+            </tbody>
+          </table>
+        </section>
+        <section class="card">
+          <h2>Method</h2>
+          <p class="tiny">Owner cash = purchase minus residual + energy + maintenance + tyres + insurance + rego. GHG = petrol well-to-wheel + manufacture; BEV electricity blends 55 g/kWh for solar share with your grid factor for the rest. Battery build 55 kg CO2e/kWh LFP or 75 NMC. Deaths = health cost ÷ $5.3m VSL — a risk allocation, not a prediction.</p>
+        </section>
+      </main>
+    </div>
+    <footer class="footer">
+      <p><strong>TheTotalCost</strong> · <a href="https://github.com/RickUsingGitHub/TheTotalCost">github.com/RickUsingGitHub/TheTotalCost</a></p>
+    </footer>
+  </div>
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+  <script>
+    ["petrol","solar","offpeak","peak","publicAc","publicDc","mixSolar","mixOffpeak","mixPeak","mixAc","mixDc","annualKm","years"].forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) el.dispatchEvent(new Event("input"));
+    });
+  </script>
+</body>
+</html>
